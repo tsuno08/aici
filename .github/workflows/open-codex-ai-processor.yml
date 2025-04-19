@@ -1,0 +1,103 @@
+name: Open-Codex AI Issue Processor
+
+on:
+  issues:
+    types: [labeled]
+    labels: ["help-ai"]
+
+jobs:
+  process_issue_with_open_codex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Checkout repository
+        uses: actions/checkout@v4.1.1
+
+      - name: Get issue details
+        id: get_issue
+        uses: actions/github-script@v6.4.1
+
+      - name: Install open-codex globally
+        run: npm install -g open-codex@latest
+
+      - name: Process issue with open-codex
+        env:
+          ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
+          ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
+          OPENAI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --model gemini-pro
+          echo "AI processed the issue using Gemini via open-codex"
+
+      - name: Generate commit and PR messages (Japanese)
+        env:
+          ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
+          ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          # コミットメッセージ生成 (日本語)
+          commit_msg=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "anthropic/claude-3-sonnet",
+              "messages": [
+                {
+                  "role": "system", 
+                  "content": "GitHub issueに対応するコード変更のための簡潔なgitコミットメッセージを日本語で生成してください。技術的な内容を含め、適切なプレフィックス(feat, fixなど)を使用してください。"
+                },
+                {
+                  "role": "user",
+                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                }
+              ]
+            }' | jq -r '.choices[0].message.content')
+
+          # PRタイトルと本文生成 (日本語)
+          pr_content=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "anthropic/claude-3-sonnet",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "GitHub issueに対応するコード変更のためのPRタイトルと本文を日本語で生成してください。JSON形式でtitleとbodyフィールドを含めてください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
+                },
+                {
+                  "role": "user",
+                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                }
+              ]
+            }' | jq -r '.choices[0].message.content')
+
+          echo "$commit_msg" > commit_msg.txt
+          echo "$pr_content" > pr_content.json
+          echo "AI-generated Japanese commit and PR messages"
+
+      - name: Create PR
+        env:
+          ISSUE_NUMBER: ${{ steps.get_issue.outputs.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          branch_name="ai-help-$ISSUE_NUMBER"
+          git checkout -b $branch_name
+
+          git add generated_code.txt
+          git commit -F commit_msg.txt
+
+          git push origin $branch_name
+          pr_title=$(jq -r '.title' pr_content.json)
+          pr_body=$(jq -r '.body' pr_content.json)
+          gh pr create \
+            --title "$pr_title" \
+            --body "$pr_body" \
+            --base main \
+            --head $branch_name
