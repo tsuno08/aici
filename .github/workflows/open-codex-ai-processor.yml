@@ -36,9 +36,9 @@ jobs:
         env:
           ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
           ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
-          OPENAI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
-          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --model gemini-pro
+          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --model gemini
           echo "AI processed the issue using Gemini via open-codex"
 
       - name: Generate commit and PR messages (Japanese)
@@ -55,7 +55,7 @@ jobs:
               "model": "deepseek/deepseek-chat-v3-0324:free",
               "messages": [
                 {
-                  "role": "system", 
+                  "role": "system",
                   "content": "GitHub issueに対応するコード変更のための簡潔なgitコミットメッセージを日本語で生成してください。技術的な内容を含め、適切なプレフィックス(feat, fixなど)を使用してください。"
                 },
                 {
