@@ -1,0 +1,46 @@
+name: AI Code Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+jobs:
+  code-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get code diff
+        id: diff
+        run: |
+          curl -s ${{ github.event.pull_request.diff_url }} > diff.patch
+          echo "DIFF=$(base64 -w0 diff.patch)" >> $GITHUB_OUTPUT
+
+      - name: AI Code Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REVIEW=$(curl "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d '{
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are a senior code reviewer. Provide constructive feedback on this code change."
+                },
+                {
+                  "role": "user",
+                  "content": "Review this code change:\n\n$(echo ${{ steps.diff.outputs.DIFF }} | base64 -d)"
+                }
+              ],
+              "model": "openai/gpt-4o"
+            }' | jq -r '.choices[0].message.content')
+
+          curl -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "${{ github.event.pull_request.comments_url }}" \
+            -d '{"body": "'"$REVIEW"'"}'
