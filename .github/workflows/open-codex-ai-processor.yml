@@ -32,9 +32,9 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.payload.issue.number,
             });
-            core.setOutput("title", JSON.stringify(issue.data.title));
-            core.setOutput("body", JSON.stringify(issue.data.body));
-            core.setOutput("number", JSON.stringify(issue.data.number));
+            core.setOutput("title", issue.data.title);
+            core.setOutput("body", issue.data.body);
+            core.setOutput("number", issue.data.number);
 
       - name: Install open-codex globally
         run: npm install -g open-codex@latest
@@ -45,9 +45,12 @@ jobs:
           ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
-          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
-          echo "AI processed the issue using Gemini via open-codex"
-
+          open-codex -a auto-edit --quiet "issueの内容を参考に実装してください\n\n### $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
+          # diffがなかったらエラー終了
+          if [ $? -ne 0 ]; then
+            echo "::error::No changes detected by open-codex. Exiting."
+            exit 1
+          fi
       - name: Generate commit and PR messages (Japanese)
         env:
           ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
@@ -92,7 +95,6 @@ jobs:
 
           echo "$commit_msg" > commit_msg.txt
           echo "$pr_content" > pr_content.json
-          echo "AI-generated Japanese commit and PR messages"
 
       - name: Create PR
         env:
@@ -104,13 +106,14 @@ jobs:
 
           branch_name="ai-help-$ISSUE_NUMBER"
           git checkout -b $branch_name
-
-          git add .
-          git commit -F commit_msg.txt
-
-          git push origin $branch_name
           pr_title=$(jq -r '.title' pr_content.json)
           pr_body=$(jq -r '.body' pr_content.json)
+          commit_msg=$(cat commit_msg.txt)
+          rm commit_msg.txt pr_content.json
+
+          git add .
+          git commit -m "$commit_msg"
+          git push origin $branch_name
           gh pr create \
             --title "$pr_title" \
             --body "$pr_body" \
