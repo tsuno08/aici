@@ -29,7 +29,7 @@ jobs:
               "messages": [
                 {
                   "role": "system",
-                  "content": "You are a senior code reviewer. Provide constructive feedback on this code change."
+                  "content": "You are a senior code reviewer. Provide constructive feedback in Japanese on this code change."
                 },
                 {
                   "role": "user",
