@@ -38,7 +38,7 @@ jobs:
           ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
-          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --model gemini
+          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini
           echo "AI processed the issue using Gemini via open-codex"
 
       - name: Generate commit and PR messages (Japanese)
@@ -98,7 +98,7 @@ jobs:
           branch_name="ai-help-$ISSUE_NUMBER"
           git checkout -b $branch_name
 
-          git add generated_code.txt
+          git add .
           git commit -F commit_msg.txt
 
           git push origin $branch_name
