@@ -26,34 +26,29 @@ jobs:
         id: get_issue
         uses: actions/github-script@v7.0.1
         with:
+          result-encoding: string
           script: |
             const issue = await github.rest.issues.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.payload.issue.number,
             });
-            return {
-              title: issue.data.title,
-              body: issue.data.body,
-              number: issue.data.number,
-            };
+            return issue.data.body;
 
       - name: Install open-codex globally
         run: npm install -g open-codex@latest
 
       - name: Process issue with open-codex
         env:
-          ISSUE_TITLE: ${{ steps.get_issue.outputs.result.title }}
-          ISSUE_BODY: ${{ steps.get_issue.outputs.result.body }}
+          ISSUE_BODY: ${{ steps.get_issue.outputs.result }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
-          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
+          open-codex -a auto-edit --quiet "Issue body: $ISSUE_BODY" --provider gemini --model gemini-2.0-flash
           echo "AI processed the issue using Gemini via open-codex"
 
       - name: Generate commit and PR messages (Japanese)
         env:
-          ISSUE_TITLE: ${{ steps.get_issue.outputs.result.title }}
-          ISSUE_BODY: ${{ steps.get_issue.outputs.result.body }}
+          ISSUE_BODY: ${{ steps.get_issue.outputs.result }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # コミットメッセージ生成 (日本語)
@@ -69,7 +64,7 @@ jobs:
                 },
                 {
                   "role": "user",
-                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                  "content": "Issue body: $ISSUE_BODY"
                 }
               ]
             }' | jq -r '.choices[0].message.content')
