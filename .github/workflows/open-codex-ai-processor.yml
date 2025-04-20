@@ -51,77 +51,75 @@ jobs:
             echo "::error::No changes detected by open-codex. Exiting."
             exit 1
           fi
-      - name: Generate commit and PR messages (Japanese)
-        env:
-          ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
-          ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        run: |
-          # コミットメッセージ生成 (日本語)
-          commit_msg=$(curl -s https://openrouter.ai/api/v1/chat/completions \
-            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "deepseek/deepseek-chat-v3-0324:free",
-              "messages": [
-                {
-                  "role": "system",
-                  "content": "diffから簡潔なgitコミットメッセージを日本語で生成してください。技術的な内容を含め、適切なプレフィックス(feat, fixなど)を使用してください。"
-                },
-                {
-                  "role": "user",
-                  "content": "diff: $(git diff --cached)"
-                }
-              ]
-            }' | jq -r '.choices[0].message.content')
 
-          # PRタイトルと本文生成 (日本語)
-          pr_title=$(curl -s https://openrouter.ai/api/v1/chat/completions \
-            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "deepseek/deepseek-chat-v3-0324:free",
-              "messages": [
-                {
-                  "role": "system",
-                  "content": "diffからGitHub issueに対応するコード変更のためのPRタイトルを日本語で生成してください。"
-                },
-                {
-                  "role": "user",
-                  "content": "Diff: $(git diff --cached)\n\nIssue: $ISSUE_TITLE\n\n$ISSUE_BODY"
-                }
-              ]
-            }' | jq -r '.choices[0].message.content')
+      # - name: Generate commit and PR messages (Japanese)
+      #   env:
+      #     ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
+      #     ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
+      #     OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      #   run: |
+      #     # コミットメッセージ生成 (日本語)
+      #     commit_msg=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+      #       -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+      #       -H "Content-Type: application/json" \
+      #       -d '{
+      #         "model": "deepseek/deepseek-chat-v3-0324:free",
+      #         "messages": [
+      #           {
+      #             "role": "system",
+      #             "content": "diffから簡潔なgitコミットメッセージを日本語で生成してください。技術的な内容を含め、適切なプレフィックス(feat, fixなど)を使用してください。"
+      #           },
+      #           {
+      #             "role": "user",
+      #             "content": "diff: $(git diff --cached)"
+      #           }
+      #         ]
+      #       }' | jq -r '.choices[0].message.content')
 
-          pr_body=$(curl -s https://openrouter.ai/api/v1/chat/completions \
-            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "model": "deepseek/deepseek-chat-v3-0324:free",
-              "messages": [
-                {
-                  "role": "system",
-                  "content": "diffからGitHub issueに対応するコード変更のためのPR本文を日本語で生成してください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
-                },
-                {
-                  "role": "user",
-                  "content": "Diff: $(git diff --cached)\n\nIssue: $ISSUE_TITLE\n\n$ISSUE_BODY"
-                }
-              ]
-            }' | jq -r '.choices[0].message.content')
+      #     # PRタイトルと本文生成 (日本語)
+      #     pr_title=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+      #       -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+      #       -H "Content-Type: application/json" \
+      #       -d '{
+      #         "model": "deepseek/deepseek-chat-v3-0324:free",
+      #         "messages": [
+      #           {
+      #             "role": "system",
+      #             "content": "diffからGitHub issueに対応するコード変更のためのPRタイトルを日本語で生成してください。"
+      #           },
+      #           {
+      #             "role": "user",
+      #             "content": "Diff: $(git diff --cached)\n\nIssue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+      #           }
+      #         ]
+      #       }' | jq -r '.choices[0].message.content')
 
-          echo "commit_msg=$commit_msg" > "GITHUB_OUTPUT"
-          echo "pr_title=$pr_title" >> "GITHUB_OUTPUT"
-          echo "pr_body=$pr_body" >> "GITHUB_OUTPUT"
-          echo "commit_msg=$commit_msg, pr_title=$pr_title, pr_body=$pr_body"
+      #     pr_body=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+      #       -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+      #       -H "Content-Type: application/json" \
+      #       -d '{
+      #         "model": "deepseek/deepseek-chat-v3-0324:free",
+      #         "messages": [
+      #           {
+      #             "role": "system",
+      #             "content": "diffからGitHub issueに対応するコード変更のためのPR本文を日本語で生成してください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
+      #           },
+      #           {
+      #             "role": "user",
+      #             "content": "Diff: $(git diff --cached)\n\nIssue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+      #           }
+      #         ]
+      #       }' | jq -r '.choices[0].message.content')
+
+      #     echo "commit_msg=$commit_msg" > "GITHUB_OUTPUT"
+      #     echo "pr_title=$pr_title" >> "GITHUB_OUTPUT"
+      #     echo "pr_body=$pr_body" >> "GITHUB_OUTPUT"
+      #     echo "commit_msg=$commit_msg, pr_title=$pr_title, pr_body=$pr_body"
 
       - name: Create PR
         env:
           ISSUE_NUMBER: ${{ steps.get_issue.outputs.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMIT_MSG: ${{ steps.get_commit.outputs.commit_msg }}
-          PR_TITLE: ${{ steps.get_commit.outputs.pr_title }}
-          PR_BODY: ${{ steps.get_commit.outputs.pr_body }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
@@ -130,10 +128,10 @@ jobs:
           git checkout -b $branch_name
 
           git add .
-          git commit -m "$COMMIT_MSG"
+          git commit -m "Automated commit for issue #$ISSUE_NUMBER"
           git push origin $branch_name
           gh pr create \
-            --title "$PR_TITLE" \
-            --body "$PR_BODY" \
+            --title "Automated PR for issue #$ISSUE_NUMBER" \
+            --body "- $ISSUE_NUMBER\n\nThis PR is automatically generated." \
             --base main \
             --head $branch_name
