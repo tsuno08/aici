@@ -76,7 +76,7 @@ jobs:
             }' | jq -r '.choices[0].message.content')
 
           # PRタイトルと本文生成 (日本語)
-          pr_content=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+          pr_title=$(curl -s https://openrouter.ai/api/v1/chat/completions \
             -H "Authorization: Bearer $OPENROUTER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
@@ -84,7 +84,7 @@ jobs:
               "messages": [
                 {
                   "role": "system",
-                  "content": "GitHub issueに対応するコード変更のためのPRタイトルと本文を日本語で生成してください。JSON形式でtitleとbodyフィールドを含めてください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
+                  "content": "GitHub issueに対応するコード変更のためのPRタイトルを日本語で生成してください。"
                 },
                 {
                   "role": "user",
@@ -93,29 +93,46 @@ jobs:
               ]
             }' | jq -r '.choices[0].message.content')
 
-          echo "$commit_msg" > commit_msg.txt
-          echo "$pr_content" > pr_content.json
+          pr_body=$(curl -s https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "deepseek/deepseek-chat-v3-0324:free",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "GitHub issueに対応するコード変更のためのPR本文を日本語で生成してください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
+                },
+                {
+                  "role": "user",
+                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                }
+              ]
+            }' | jq -r '.choices[0].message.content')
+
+          echo "commit_msg=$commit_msg" > "GITHUB_OUTPUT"
+          echo "pr_title=$pr_title" >> "GITHUB_OUTPUT"
+          echo "pr_body=$pr_body" >> "GITHUB_OUTPUT"
 
       - name: Create PR
         env:
           ISSUE_NUMBER: ${{ steps.get_issue.outputs.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_MSG: ${{ steps.get_commit.outputs.commit_msg }}
+          PR_TITLE: ${{ steps.get_commit.outputs.pr_title }}
+          PR_BODY: ${{ steps.get_commit.outputs.pr_body }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
           branch_name="ai-help-$ISSUE_NUMBER"
           git checkout -b $branch_name
-          pr_title=$(jq -r '.title' pr_content.json)
-          pr_body=$(jq -r '.body' pr_content.json)
-          commit_msg=$(cat commit_msg.txt)
-          rm commit_msg.txt pr_content.json
 
           git add .
-          git commit -m "$commit_msg"
+          git commit -m "$COMMIT_MSG"
           git push origin $branch_name
           gh pr create \
-            --title "$pr_title" \
-            --body "$pr_body" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
             --base main \
             --head $branch_name
