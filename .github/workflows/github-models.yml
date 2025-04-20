@@ -38,10 +38,9 @@ jobs:
               ],
               "model": "openai/gpt-4o"
             }' | jq -r '.choices[0].message.content')
-          echo "$REVIEW"
 
           curl -X POST \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "Accept: application/vnd.github.v3+json" \
             "${{ github.event.pull_request.comments_url }}" \
-            -d '{"body": "'"$REVIEW"'"}'
+            -d "$(jq -n --arg body "$REVIEW" '{"body": $body}')"
