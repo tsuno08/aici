@@ -44,7 +44,7 @@ jobs:
             -H "Authorization: Bearer $OPENROUTER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
-              "model": "anthropic/claude-3-sonnet",
+              "model": "deepseek/deepseek-chat-v3-0324:free",
               "messages": [
                 {
                   "role": "system", 
@@ -62,7 +62,7 @@ jobs:
             -H "Authorization: Bearer $OPENROUTER_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{
-              "model": "anthropic/claude-3-sonnet",
+              "model": "deepseek/deepseek-chat-v3-0324:free",
               "messages": [
                 {
                   "role": "system",
