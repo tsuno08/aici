@@ -38,19 +38,17 @@ jobs:
 
       - name: Process issue with open-codex
         env:
-          ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
-          ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
+          ISSUE_TITLE: ${{ steps.get_issue.outputs.result.title }}
+          ISSUE_BODY: ${{ steps.get_issue.outputs.result.body }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
           open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
-          echo "issue title: $ISSUE_TITLE"
-          echo "issue body: $ISSUE_BODY"
           echo "AI processed the issue using Gemini via open-codex"
 
       - name: Generate commit and PR messages (Japanese)
         env:
-          ISSUE_TITLE: ${{ steps.get_issue.outputs.title }}
-          ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
+          ISSUE_TITLE: ${{ steps.get_issue.outputs.result.title }}
+          ISSUE_BODY: ${{ steps.get_issue.outputs.result.body }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           # コミットメッセージ生成 (日本語)
@@ -95,12 +93,11 @@ jobs:
 
       - name: Create PR
         env:
-          ISSUE_NUMBER: ${{ steps.get_issue.outputs.number }}
+          ISSUE_NUMBER: ${{ steps.get_issue.outputs.result.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          echo "issue number: ${{ steps.get_issue.outputs.number }}"
 
           branch_name="ai-help-$ISSUE_NUMBER"
           git checkout -b $branch_name
