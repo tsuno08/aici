@@ -20,6 +20,14 @@ jobs:
       - name: Get issue details
         id: get_issue
         uses: actions/github-script@v6.4.1
+        with:
+          script: |
+            const issue = context.payload.issue;
+            return {
+              title: issue.title,
+              body: issue.body,
+              number: issue.number
+            };
 
       - name: Install open-codex globally
         run: npm install -g open-codex@latest
