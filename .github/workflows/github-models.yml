@@ -38,6 +38,7 @@ jobs:
               ],
               "model": "openai/gpt-4o"
             }' | jq -r '.choices[0].message.content')
+          echo "$REVIEW"
 
           curl -X POST \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
