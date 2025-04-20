@@ -45,7 +45,7 @@ jobs:
           ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
-          open-codex -a auto-edit --quiet "issueの内容を参考に実装してください\n\n### $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
+          open-codex -a full-auto --quiet "issueの内容を参考に実装してください\n\n### $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
           # diffがなかったらエラー終了
           if [ $? -ne 0 ]; then
             echo "::error::No changes detected by open-codex. Exiting."
