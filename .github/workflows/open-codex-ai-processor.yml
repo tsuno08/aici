@@ -27,7 +27,6 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.payload.issue.number,
             });
-            console.log(issue.data);
             return {
               title: issue.data.title,
               body: issue.data.body,
@@ -44,6 +43,8 @@ jobs:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
           open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
+          echo "issue title: $ISSUE_TITLE"
+          echo "issue body: $ISSUE_BODY"
           echo "AI processed the issue using Gemini via open-codex"
 
       - name: Generate commit and PR messages (Japanese)
@@ -99,6 +100,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+          echo "issue number: ${{ steps.get_issue.outputs.number }}"
 
           branch_name="ai-help-$ISSUE_NUMBER"
           git checkout -b $branch_name
