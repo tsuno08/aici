@@ -22,12 +22,12 @@ jobs:
         uses: actions/github-script@v6.4.1
         with:
           script: |
-            const issue = context.payload.issue;
-            return {
-              title: issue.title,
-              body: issue.body,
-              number: issue.number
-            };
+            const issue = await github.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.issue.number,
+            });
+            return issue.data;
 
       - name: Install open-codex globally
         run: npm install -g open-codex@latest
@@ -38,7 +38,7 @@ jobs:
           ISSUE_BODY: ${{ steps.get_issue.outputs.body }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}
         run: |
-          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini
+          open-codex -a auto-edit --quiet "Address issue: $ISSUE_TITLE\n\n$ISSUE_BODY" --provider gemini --model gemini-2.0-flash
           echo "AI processed the issue using Gemini via open-codex"
 
       - name: Generate commit and PR messages (Japanese)
