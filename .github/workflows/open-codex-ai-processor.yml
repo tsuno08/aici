@@ -66,11 +66,11 @@ jobs:
               "messages": [
                 {
                   "role": "system",
-                  "content": "GitHub issueに対応するコード変更のための簡潔なgitコミットメッセージを日本語で生成してください。技術的な内容を含め、適切なプレフィックス(feat, fixなど)を使用してください。"
+                  "content": "diffから簡潔なgitコミットメッセージを日本語で生成してください。技術的な内容を含め、適切なプレフィックス(feat, fixなど)を使用してください。"
                 },
                 {
                   "role": "user",
-                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                  "content": "diff: $(git diff --cached)"
                 }
               ]
             }' | jq -r '.choices[0].message.content')
@@ -84,11 +84,11 @@ jobs:
               "messages": [
                 {
                   "role": "system",
-                  "content": "GitHub issueに対応するコード変更のためのPRタイトルを日本語で生成してください。"
+                  "content": "diffからGitHub issueに対応するコード変更のためのPRタイトルを日本語で生成してください。"
                 },
                 {
                   "role": "user",
-                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                  "content": "Diff: $(git diff --cached)\n\nIssue: $ISSUE_TITLE\n\n$ISSUE_BODY"
                 }
               ]
             }' | jq -r '.choices[0].message.content')
@@ -101,11 +101,11 @@ jobs:
               "messages": [
                 {
                   "role": "system",
-                  "content": "GitHub issueに対応するコード変更のためのPR本文を日本語で生成してください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
+                  "content": "diffからGitHub issueに対応するコード変更のためのPR本文を日本語で生成してください。技術的な詳細を含め、変更内容が明確に分かるようにしてください。"
                 },
                 {
                   "role": "user",
-                  "content": "Issue: $ISSUE_TITLE\n\n$ISSUE_BODY"
+                  "content": "Diff: $(git diff --cached)\n\nIssue: $ISSUE_TITLE\n\n$ISSUE_BODY"
                 }
               ]
             }' | jq -r '.choices[0].message.content')
@@ -113,6 +113,7 @@ jobs:
           echo "commit_msg=$commit_msg" > "GITHUB_OUTPUT"
           echo "pr_title=$pr_title" >> "GITHUB_OUTPUT"
           echo "pr_body=$pr_body" >> "GITHUB_OUTPUT"
+          echo "commit_msg=$commit_msg, pr_title=$pr_title, pr_body=$pr_body"
 
       - name: Create PR
         env:
