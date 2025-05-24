@@ -3,7 +3,7 @@ name: Codex AI Issue Processor
 on:
   issues:
     types: [labeled]
-    labels: ["help-ai"]
+    labels: ["codex"]
 
 permissions:
   contents: write
