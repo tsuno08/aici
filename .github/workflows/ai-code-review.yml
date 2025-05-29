@@ -1,0 +1,39 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    
+jobs:
+  ai-code-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: AI Code Review
+        uses: reviewdog/action-suggester@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tool_name: ai-review
+          
+      - name: OpenAI Code Review
+        uses: anc95/ChatGPT-CodeReview@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          MODEL: gpt-4
+          LANGUAGE: Japanese
+          PROMPT: |
+            あなたはシニアソフトウェアエンジニアとして、このコードレビューを行います。
+            以下の点に注意してください：
+            - コードの品質と可読性
+            - パフォーマンスの問題
+            - セキュリティの脆弱性
+            - ベストプラクティスの適用
+            - テストの網羅性
+            建設的なフィードバックを日本語で提供してください。
